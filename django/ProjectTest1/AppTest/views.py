@@ -17,44 +17,6 @@ from django.db.models.functions import Substr, Cast
 def simple_message(request):
     return Response({"message": "Hello, ceci est une API simple en Django REST Framework !"})
 
-"""
-@api_view(['POST'])
-def forecast_sales(request):
-    
-    print("----------je suis ici --------------------")
-    print("📤 Requête reçue :", request.data)
-    # Récupérer les données envoyées par Angular
-    sales = request.data.get("historique_data", [])
-    model = request.data.get("model")  
-
-    # Obtenir la fonction correspondant au modèle choisi
-    forecast_function = get_forecast_function(model)
-
-    # Liste pour stocker les valeurs forecastées
-    forecast_results = []
-    previous_revenue = None  # Dernier revenu connu
-
-    for sale in sales:
-        revenue = sale.get("revenue")
-        if revenue is not None:
-            # Si la donnée existe déjà, on la garde
-            previous_revenue = revenue
-            forecast_results.append(revenue)
-        else:
-            # Si revenue est null, on applique la fonction de forecasting
-            if previous_revenue is not None:
-                forecast_value = forecast_function(previous_revenue)
-            else:
-                forecast_value = None  # Pas de donnée précédente
-
-            # Mettre à jour previous_revenue pour la suite des calculs
-            previous_revenue = forecast_value
-            forecast_results.append(forecast_value)
-    
-            print("la fin : ", forecast_results)
-    return Response({"forecast": forecast_results})
-"""
-
 
 @api_view(['POST'])
 def forecast(request):
@@ -68,7 +30,7 @@ def forecast(request):
         "freq": request.data.get("freq")
     }
 
-    print("--------------",params["model"],"-----------",params["freq"])
+    
 
     
     # Obtenir la fonction correspondant au modèle choisi

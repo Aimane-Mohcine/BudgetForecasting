@@ -9,6 +9,280 @@ from datetime import datetime
 from pmdarima import auto_arima
 # Facbook propeht 
 from prophet import Prophet
+# Holt-Winters
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+
+
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+import pandas as pd
+
+
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+import pandas as pd
+def holt_winters_add(params):
+    historique_data = params.get("historique_data", [])
+    freq = params.get("freq")
+
+    if not historique_data or not freq:
+        return []
+
+    # 1. Convertir en DataFrame
+    df = pd.DataFrame(historique_data)
+
+    # 2. Trier par date (important pour l'ordre)
+    df = df.sort_values("date")
+
+    # 3. Séparer historique et futur
+    df_histo = df.dropna(subset=["revenue"]).copy()
+    df_future = df[df["revenue"].isna()].copy()
+
+    if df_histo.empty:
+        return df[["date", "revenue"]].to_dict(orient="records")
+
+    # 4. Déterminer la saisonnalité
+    if freq == "M":
+        seasonal_periods = 12
+    elif freq == "Q":
+        seasonal_periods = 4
+    elif freq == "Y":
+        seasonal_periods = 1
+    else:
+        raise ValueError("Fréquence non prise en charge")
+
+    # 5. Créer la série temporelle
+    y = df_histo["revenue"].astype(float)
+
+    # 6. Appliquer le modèle Holt-Winters
+    model = ExponentialSmoothing(
+        y,
+        trend='add',
+        seasonal='add',
+        seasonal_periods=seasonal_periods
+    )
+    model_fit = model.fit()
+
+    # 7. Prédiction
+    n_periods = len(df_future)
+    if n_periods > 0:
+        forecast = model_fit.forecast(n_periods)
+        df_future["revenue"] = forecast.values
+
+    # 8. Fusionner les résultats
+    df_combined = pd.concat([df_histo, df_future])
+    df_combined = df_combined.sort_values("date").reset_index(drop=True)
+    df_combined["revenue"] = df_combined["revenue"].astype(float)
+
+    # 9. Retour sous forme de liste
+    final_list = df_combined[["date", "revenue"]].to_dict(orient="records")
+
+    return final_list
+
+
+def holt_winters_multiplicative(params):
+    historique_data = params.get("historique_data", [])
+    freq = params.get("freq")
+
+    if not historique_data or not freq:
+        return []
+
+    df = pd.DataFrame(historique_data)
+    df = df.sort_values("date")
+
+    df_histo = df.dropna(subset=["revenue"]).copy()
+    df_future = df[df["revenue"].isna()].copy()
+
+    if df_histo.empty:
+        return df[["date", "revenue"]].to_dict(orient="records")
+
+    # Déterminer la saisonnalité
+    if freq == "M":
+        seasonal_periods = 12
+    elif freq == "Q":
+        seasonal_periods = 4
+    elif freq == "Y":
+        seasonal_periods = None  # ⚠️ Pas de multiplicatif sans saisonnalité
+    else:
+        raise ValueError("Fréquence non prise en charge")
+
+    y = df_histo["revenue"].astype(float)
+
+    if seasonal_periods is None:
+        raise ValueError("Le modèle multiplicatif nécessite une saisonnalité (pas adapté pour données annuelles)")
+
+    # Modèle Holt-Winters multiplicatif
+    model = ExponentialSmoothing(
+        y,
+        trend='add',               # tu peux aussi mettre 'mul' si tu veux une tendance multiplicative
+        seasonal='mul',
+        seasonal_periods=seasonal_periods
+    ).fit()
+
+    # Prédiction
+    n_periods = len(df_future)
+    if n_periods > 0:
+        forecast = model.forecast(n_periods)
+        df_future["revenue"] = forecast.values
+
+    df_combined = pd.concat([df_histo, df_future])
+    df_combined = df_combined.sort_values("date").reset_index(drop=True)
+    df_combined["revenue"] = df_combined["revenue"].astype(float)
+
+    return df_combined[["date", "revenue"]].to_dict(orient="records")
+
+
+
+def holt_winters_forecast(params):
+    historique_data = params.get("historique_data", [])
+    freq = params.get("freq")
+
+    if not historique_data or not freq:
+        return []
+
+    df = pd.DataFrame(historique_data)
+    df = df.sort_values("date")
+
+    df_histo = df.dropna(subset=["revenue"]).copy()
+    df_future = df[df["revenue"].isna()].copy()
+
+    if df_histo.empty:
+        return df[["date", "revenue"]].to_dict(orient="records")
+
+    # Déterminer la saisonnalité
+    if freq == "M":
+        seasonal_periods = 12
+    elif freq == "Q":
+        seasonal_periods = 4
+    elif freq == "Y":
+        seasonal_periods = None  # pas de saisonnalité pour annuel
+    else:
+        raise ValueError("Fréquence non prise en charge")
+
+    y = df_histo["revenue"].astype(float)
+
+    # Appliquer Holt-Winters (additif et multiplicatif si possible)
+    best_model = None
+    best_aic = np.inf
+
+    if seasonal_periods:  # On teste les 2 uniquement si saisonnalité possible
+        try:
+            model_add = ExponentialSmoothing(y, trend='add', seasonal='add', seasonal_periods=seasonal_periods).fit()
+            if model_add.aic < best_aic:
+                best_model = model_add
+                best_aic = model_add.aic
+        except:
+            pass
+
+        try:
+            model_mul = ExponentialSmoothing(y, trend='add', seasonal='mul', seasonal_periods=seasonal_periods).fit()
+            if model_mul.aic < best_aic:
+                best_model = model_mul
+                best_aic = model_mul.aic
+        except:
+            pass
+    else:
+        # Pas de saisonnalité → modèle simple avec tendance additive
+        best_model = ExponentialSmoothing(y, trend='add', seasonal=None).fit()
+
+    # Prédiction
+    n_periods = len(df_future)
+    if n_periods > 0 and best_model is not None:
+        forecast = best_model.forecast(n_periods)
+        df_future["revenue"] = forecast.values
+
+    # Fusionner résultats
+    df_combined = pd.concat([df_histo, df_future])
+    df_combined = df_combined.sort_values("date").reset_index(drop=True)
+    df_combined["revenue"] = df_combined["revenue"].astype(float)
+
+    return df_combined[["date", "revenue"]].to_dict(orient="records")
+
+
+def holt_winters_all_combinations(params):
+    import warnings
+    warnings.filterwarnings("ignore", category=UserWarning)
+
+    historique_data = params.get("historique_data", [])
+    freq = params.get("freq")
+
+    if not historique_data or not freq:
+        return []
+
+    df = pd.DataFrame(historique_data)
+    df = df.sort_values("date")
+
+    df_histo = df.dropna(subset=["revenue"]).copy()
+    df_future = df[df["revenue"].isna()].copy()
+
+    if df_histo.empty:
+        return df[["date", "revenue"]].to_dict(orient="records")
+
+    # Déterminer la saisonnalité
+    if freq == "M":
+        seasonal_periods = 12
+    elif freq == "Q":
+        seasonal_periods = 4
+    elif freq == "Y":
+        seasonal_periods = None  # pas de saisonnalité pour annuel
+    else:
+        raise ValueError("Fréquence non prise en charge")
+
+    y = df_histo["revenue"].astype(float)
+
+    best_model = None
+    best_aic = np.inf
+    best_config = ""
+
+    if seasonal_periods:
+        # 4 combinaisons
+        for trend in ['add', 'mul']:
+            for seasonal in ['add', 'mul']:
+                try:
+                    model = ExponentialSmoothing(
+                        y,
+                        trend=trend,
+                        seasonal=seasonal,
+                        seasonal_periods=seasonal_periods
+                    ).fit()
+                    if model.aic < best_aic:
+                        best_model = model
+                        best_aic = model.aic
+                        best_config = f"trend={trend}, seasonal={seasonal}"
+                except:
+                    pass
+    else:
+        # Cas sans saisonnalité → 2 combinaisons
+        for trend in ['add', 'mul']:
+            try:
+                model = ExponentialSmoothing(
+                    y,
+                    trend=trend,
+                    seasonal=None
+                ).fit()
+                if model.aic < best_aic:
+                    best_model = model
+                    best_aic = model.aic
+                    best_config = f"trend={trend}, seasonal=None"
+            except:
+                pass
+
+    # Prédiction
+    n_periods = len(df_future)
+    if n_periods > 0 and best_model is not None:
+        forecast = best_model.forecast(n_periods)
+        df_future["revenue"] = forecast.values
+
+    df_combined = pd.concat([df_histo, df_future])
+    df_combined = df_combined.sort_values("date").reset_index(drop=True)
+    df_combined["revenue"] = df_combined["revenue"].astype(float)
+
+    result = df_combined[["date", "revenue"]].to_dict(orient="records")
+
+    # BONUS : tu peux ajouter le modèle choisi si tu veux le voir
+    print(f"✅ Meilleur modèle choisi : {best_config} (AIC = {best_aic:.2f})")
+
+    return result
+
+
 
 
 def prophet_forecast(params):
@@ -165,10 +439,8 @@ def prophet_forecast(params):
     return final_list
 
 
-
-
-
 def arima_forecast(params):
+
 
     historique_data=params["historique_data"]
     freq=params["freq"]
@@ -244,6 +516,9 @@ def arima_forecast(params):
 
    
     return final_list
+
+
+
 def sarima_forecast(params):
     """
     Fonction similaire à arima_forecast, mais paramétrée pour un modèle SARIMA
@@ -324,6 +599,8 @@ def sarima_forecast(params):
     return final_list
 
 
+
+
 def regression_lineaire(params):
 
     dataset=params["historique_data"]
@@ -377,9 +654,7 @@ def regression_lineaire(params):
 
 
 
-def lstm_forecast(previous_revenue):
-    """ Forecasting avec une multiplication par 4 """
-    return previous_revenue * 4 if previous_revenue is not None else None
+
 
 # Fonction pour choisir la bonne méthode de forecasting
 def get_forecast_function(model):
@@ -388,7 +663,9 @@ def get_forecast_function(model):
         "regression_lineaire": regression_lineaire,
         "arima": arima_forecast,
         "sarima": sarima_forecast,
-        "prophet":prophet_forecast
+        "prophet":prophet_forecast,
+        "holt-Winters":holt_winters_all_combinations
+        
 
     }
     return forecast_methods.get(model)  # Par défaut : simple_forecast
