@@ -1,0 +1,99 @@
+<div class="container mt-4">
+  <h4 class="text-center text-primary fw-bold mb-3">
+    Évaluer  les Algorithmes sur vos Données
+  </h4>
+
+  <!-- 🔹 Choix du modèle -->
+  <div class="card shadow-sm border-0 mb-3" >
+    <div class="card-body py-3">
+      <h6 class="text-center text-secondary fw-semibold mb-3">Sélection du Modèle</h6>
+      <div class="row justify-content-center g-3">
+        <div class="col-md-5">
+          <select class="form-select" [(ngModel)]="selectedModel" (change)="onModelChange()">
+            <option value="regression_lineaire">Régression Linéaire</option>
+            <option value="arima">ARIMA</option>
+            <option value="sarima">SARIMA</option>
+            <option value="prophet">Prophet</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 🔍 Bouton + précision visible ici -->
+      <div class="row justify-content-center mt-3">
+        <div class="col-md-3">
+          <button class="btn btn-primary w-100 fw-bold py-2" (click)="testerModel()">
+             Tester l'algorithme
+          </button>
+        </div>
+      </div>
+
+      <!-- ⏳ Chargement -->
+      <div *ngIf="isLoading" class="text-center mt-3">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="text-muted small mt-2">Calcul de la précision...</p>
+      </div>
+
+      <!-- ✅ Précision ici -->
+      <div *ngIf="showPrecision" class="text-center mt-3">
+        <span class="badge bg-success px-3 py-2 fs-6">
+          ✅ Précision : {{ precision }}%
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔹 Boutons d'affichage -->
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="card-body py-3 text-center">
+      <div class="mb-2 text-secondary fw-semibold">Afficher les revenus par :</div>
+      <div class="btn-group" role="group">
+        <button class="btn btn-outline-primary"
+                [class.active]="typeAffichage === 'mois'"
+                (click)="changerAffichage('mois')">Mois</button>
+        <button class="btn btn-outline-primary"
+                [class.active]="typeAffichage === 'trimestre'"
+                (click)="changerAffichage('trimestre')">Trimestre</button>
+        <button class="btn btn-outline-primary"
+                [class.active]="typeAffichage === 'annee'"
+                (click)="changerAffichage('annee')">Année</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔹 Tableau -->
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="card-body py-3">
+      <h6 class="text-center text-secondary fw-bold mb-3">📅 Revenus Historiques</h6>
+      <div class="mx-auto" style="max-width: 700px;">
+        <div style="max-height: 260px; overflow-y: auto;">
+          <table class="table table-bordered text-center align-middle mb-0">
+            <thead class="table-dark sticky-top">
+            <tr>
+              <th style="width: 50%;">Date</th>
+              <th>Revenu (€)</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let d of salesData">
+              <td>{{ d.date }}</td>
+              <td class="fw-bold text-primary">{{ d.revenue | currency:'EUR' }}</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔹 Graphe -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body py-3">
+      <h6 class="text-center text-secondary fw-bold mb-3">📈 Évolution des Revenus</h6>
+      <div class="d-flex justify-content-center">
+        <div style="max-width: 700px; width: 100%;">
+          <canvas #chartCanvas></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

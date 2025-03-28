@@ -1,0 +1,79 @@
+<div class="container mt-5">
+  <h2 class="text-center mb-4 text-primary fw-bold">Forecasting des Revenus Trimestriels</h2>
+
+  <!-- Sélection du modèle de forecasting -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+      <h5 class="card-title text-center text-secondary fw-bold">
+        Choisissez le modèle de forecasting :
+      </h5>
+      <div class="row justify-content-center">
+        <div class="col-md-8">
+          <select id="modelSelect" class="form-select form-select-lg shadow-sm" [(ngModel)]="selectedModel" (change)="onModelChange()">
+            <option value="regression_lineaire">régression linéaire</option>
+            <option value="arima">Arima</option>
+            <option value="sarima">Sarima </option>
+            <option value="prophet">Prophet</option>
+            <option value="holt-Winters">Holt-Winters</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Bouton pour calculer le forecasting -->
+  <div class="text-center">
+    <button class="btn btn-primary btn-lg px-4 py-2 shadow-sm fw-bold" (click)="getForecasting()">
+      Calculer le Forecasting
+    </button>
+  </div>
+
+  <!-- Indicateur de chargement -->
+  <div *ngIf="isLoading" class="text-center mt-3">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="text-secondary mt-2">Prévision en cours...</p>
+  </div>
+
+  <!-- ✅ TABLEAU DES REVENUS TRIMESTRIELS -->
+  <div class="card shadow-sm border-0 mt-4">
+    <div class="card-body">
+      <h5 class="card-title text-center text-secondary fw-bold">Tableau des Revenus Trimestriels</h5>
+
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered text-center">
+          <thead class="table-dark">
+          <tr>
+            <th>Trimestre</th>
+            <th>Chiffre d'Affaires (€)</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let trimestreData of salesData">
+            <td>{{ trimestreData.trimestre }}</td>
+            <td>
+              <!-- ✅ Afficher "À prévoir..." si revenue est null -->
+              <span *ngIf="trimestreData.revenue === null" class="text-muted fst-italic">
+                  À prévoir...
+                </span>
+              <!-- ✅ Afficher la valeur normale avec couleur selon forecast -->
+              <span *ngIf="trimestreData.revenue !== null"
+                    [ngClass]="{'text-danger fw-bold': trimestreData.forecasted, 'text-primary': !trimestreData.forecasted}">
+                  {{ trimestreData.revenue | currency:'EUR' }}
+                </span>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ CHART CONSERVÉ SANS MODIFICATIONS -->
+  <div class="card shadow-sm border-0 mt-4">
+    <div class="card-body">
+      <h5 class="card-title text-center text-secondary fw-bold">Évolution des Revenus</h5>
+      <canvas #chartCanvas></canvas>
+    </div>
+  </div>
+</div>

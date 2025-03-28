@@ -1,0 +1,8 @@
+canvas {
+  max-width:50%; /* ✅ Réduire la largeur */
+  max-height: 500px; /* ✅ Réduire la hauteur */
+  margin-left: 25%;
+  /*display: block;
+  margin: 0 auto; /* ✅ Centrer le graphique */
+
+}

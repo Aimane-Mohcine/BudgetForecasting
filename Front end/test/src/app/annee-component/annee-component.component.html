@@ -1,0 +1,67 @@
+<div class="container mt-5">
+  <h2 class="text-center mb-4 text-primary fw-bold">Forecasting des Revenus Annuels</h2>
+
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+      <h5 class="card-title text-center text-secondary fw-bold">
+        Choisissez le modèle de forecasting :
+      </h5>
+      <div class="row justify-content-center">
+        <div class="col-md-8">
+          <select id="modelSelect" class="form-select form-select-lg shadow-sm" [(ngModel)]="selectedModel" (change)="onModelChange()">
+            <option value="regression_lineaire">régression linéaire</option>
+            <option value="arima">Arima</option>
+            <option value="sarima">Sarima</option>
+            <option value="prophet">Prophet</option>
+            <option value="holt-Winters">Holt-Winters</option>
+
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center">
+    <button class="btn btn-primary btn-lg px-4 py-2 shadow-sm fw-bold" (click)="getForecasting()">
+      Calculer le Forecasting
+    </button>
+  </div>
+
+  <!-- Indicateur de chargement -->
+  <div *ngIf="isLoading" class="text-center mt-3">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Calcul en cours...</span>
+    </div>
+    <p class="text-secondary mt-2">Prévision en cours, veuillez patienter...</p>
+  </div>
+
+  <div class="table-responsive mt-4">
+    <table class="table table-hover table-bordered text-center">
+      <thead class="table-dark">
+      <tr>
+        <th>Année</th>
+        <th>Chiffre d'Affaires (€)</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr *ngFor="let anneeData of salesData">
+        <td>{{ anneeData.annee }}</td>
+        <td>
+          <span *ngIf="anneeData.revenue === null" class="text-muted fst-italic">À prévoir...</span>
+          <span *ngIf="anneeData.revenue !== null"
+                [ngClass]="{'text-primary fw-bold': !anneeData.forecasted, 'text-danger fw-bold': anneeData.forecasted}">
+            {{ anneeData.revenue | currency:'EUR' }}
+          </span>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card shadow-sm border-0 mt-4">
+    <div class="card-body">
+      <h5 class="card-title text-center text-secondary fw-bold">Évolution des Revenus</h5>
+      <canvas #chartCanvas></canvas>
+    </div>
+  </div>
+</div>
