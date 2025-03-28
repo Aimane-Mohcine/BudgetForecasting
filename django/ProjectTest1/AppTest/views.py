@@ -10,6 +10,8 @@ from datetime import datetime
 
 from django.db.models import Sum
 from django.db.models.functions import Substr, Cast
+import random
+import time  
 
 
 # API qui retourne une liste statique d'articles sans modèle
@@ -125,6 +127,7 @@ def revenus_par_trimestre(request):
 
 @api_view(['GET'])
 def revenus_par_annee(request):
+
     """ Calculer les revenus par année """
     revenus = (
         ChiffreAffaire.objects
@@ -135,3 +138,25 @@ def revenus_par_annee(request):
     )
 
     return Response({r['annee']: r['total'] for r in revenus})
+
+
+#test le tester_modele avec le data 
+@api_view(['POST'])
+def tester_modele(request):
+    model = request.data.get('model')
+    type_affichage = request.data.get('type')
+    data = request.data.get('data')
+
+    print("📥 Modèle sélectionné :", model)
+    print("📂 Type d'affichage :", type_affichage)
+    print("📊 Données reçues :")
+    for item in data:
+        print(f"  ➤ {item['date']} : {item['revenue']} €")
+
+    # Génère une précision aléatoire entre 85.00 et 95.00
+    precision = round(random.uniform(85, 95), 2)
+
+    print("✅ Précision simulée :", precision, "%")
+     # 💤 Pause simulée (ex: 1.5 secondes)
+    time.sleep(3)
+    return Response({ "precision": precision })

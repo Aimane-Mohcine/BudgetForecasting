@@ -12,13 +12,113 @@ from prophet import Prophet
 # Holt-Winters
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
+# Évaluer la précision du modèle (MAPE + précision %)
+from sklearn.metrics import mean_absolute_percentage_error
 
-from statsmodels.tsa.holtwinters import ExponentialSmoothing
-import pandas as pd
 
 
-from statsmodels.tsa.holtwinters import ExponentialSmoothing
-import pandas as pd
+
+
+def arima_forecast(params):
+
+
+    historique_data=params["historique_data"]
+    freq=params["freq"]
+    
+
+    # Si on n'a pas de données ou pas de fréquence, on renvoie une liste vide
+    if not historique_data or not freq:
+        return []
+
+    # Conversion de la liste de dict en DataFrame
+    # historique_data est de la forme: 
+    # [{"date": "...", "revenue": float ou None}, ...]
+    df = pd.DataFrame(historique_data)
+
+    
+
+    
+    df.sort_index(inplace=True)
+
+    print("-------------------------------------------------------------")
+    print(df)
+    print("-------------------------------------------------------------")
+    # Séparer l'historique (valeurs non nulles) du futur (valeurs nulles)
+    df_histo = df.dropna(subset=['revenue']).copy()  # historique
+    df_future = df[df['revenue'].isna()].copy()      # futur à prédire
+
+    
+ 
+
+    # Séries temporelles pour l'entraînement
+    y = df_histo['revenue']
+
+
+    # **Division en train (85%) et test (15%)**
+    train_size = int(len(y) * 0.90)
+    train, test = y[:train_size], y[train_size:]
+  
+
+  
+    # Entraînement du modèle auto_arima
+    # (pour gérer la saisonnalité mensuelle, vous pouvez mettre seasonal=True, m=12)
+
+
+    model = auto_arima(
+        train,
+        start_p=1, start_q=1,
+        max_p=5, max_q=5,
+        d=None,          # détecte automatiquement l'ordre d'intégration
+        seasonal=False,  # à ajuster si nécessaire
+        stepwise=True,
+        trace=False
+    )
+    # Évaluer la précision du modèle (MAPE + précision %)
+    yhat = model.predict(n_periods=len(test))
+    mape_val = mean_absolute_percentage_error(test, yhat) * 100
+    precision = 100 - mape_val
+
+    
+
+    print("--------------------------------------------------------------")
+    print(f"🎯 Précision de validation ARIMA : {precision:.2f}% (MAPE = {mape_val:.2f}%)")
+    print("--------------------------------------------------------------")
+
+
+    # Prédiction sur le nombre de périodes futures
+    n_periods = len(df_future)+len(test)
+    if n_periods > 0:
+        forecast = model.predict(n_periods=n_periods)
+        # Remplir df_future
+        df_future['revenue'] = forecast
+
+
+    # Concaténer historique + futur
+    df_combined = pd.concat([df_histo, df_future]).sort_index()
+
+
+
+   
+   # Remettre l'index à zéro si vous voulez ignorer "period"
+    df_combined = df_combined.reset_index(drop=True)
+
+    # forcer revenue en float ou np.float64
+    df_combined['revenue'] = df_combined['revenue'].astype(float)
+
+    # Convertir en liste de dict
+    final_list = df_combined[['date', 'revenue']].to_dict(orient='records')
+
+    print("-------------------------------------------------------------")
+    print(df_combined)
+    print("-------------------------------------------------------------")
+   
+    return final_list
+
+
+
+
+
+
 def holt_winters_add(params):
     historique_data = params.get("historique_data", [])
     freq = params.get("freq")
@@ -439,6 +539,7 @@ def prophet_forecast(params):
     return final_list
 
 
+"""
 def arima_forecast(params):
 
 
@@ -517,7 +618,7 @@ def arima_forecast(params):
    
     return final_list
 
-
+"""
 
 def sarima_forecast(params):
     """
