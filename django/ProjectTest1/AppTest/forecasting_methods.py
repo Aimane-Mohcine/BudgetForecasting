@@ -17,7 +17,7 @@ from sklearn.metrics import mean_absolute_percentage_error
 
 
 
-
+"""
 
 def arima_forecast(params):
 
@@ -113,7 +113,7 @@ def arima_forecast(params):
     print("-------------------------------------------------------------")
    
     return final_list
-
+"""
 
 
 
@@ -539,7 +539,7 @@ def prophet_forecast(params):
     return final_list
 
 
-"""
+
 def arima_forecast(params):
 
 
@@ -618,7 +618,6 @@ def arima_forecast(params):
    
     return final_list
 
-"""
 
 def sarima_forecast(params):
     """

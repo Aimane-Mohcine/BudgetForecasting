@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 # ==== Paramètres ====
 date_debut = "2021-01"
-annee = 4
+annee = 7
 nb_mois_valide = annee * 12  # 48 mois de données historiques
 nb_mois_null = 12            # 12 mois à prédire (futurs)
 

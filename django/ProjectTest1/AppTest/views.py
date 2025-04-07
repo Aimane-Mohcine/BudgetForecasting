@@ -3,6 +3,7 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from .forecasting_methods import get_forecast_function
+from .Evaluer_Algorithmes import get_evaluate_forcing_algorithms
 from .models import ChiffreAffaire  # Assurez-vous que c'est bien importé
 
 import csv
@@ -139,8 +140,6 @@ def revenus_par_annee(request):
 
     return Response({r['annee']: r['total'] for r in revenus})
 
-
-#test le tester_modele avec le data 
 @api_view(['POST'])
 def tester_modele(request):
     model = request.data.get('model')
@@ -153,10 +152,18 @@ def tester_modele(request):
     for item in data:
         print(f"  ➤ {item['date']} : {item['revenue']} €")
 
-    # Génère une précision aléatoire entre 85.00 et 95.00
-    precision = round(random.uniform(85, 95), 2)
 
-    print("✅ Précision simulée :", precision, "%")
-     # 💤 Pause simulée (ex: 1.5 secondes)
-    time.sleep(3)
-    return Response({ "precision": precision })
+     # Cas normal : un modèle précis est choisi
+    evaluate_forcing_algorithms = get_evaluate_forcing_algorithms(model)
+
+    if model == "best_fit":  
+        result = evaluate_forcing_algorithms(type_affichage, data, nb_periodes_test=1)
+        return Response({
+            "precision": result["precision"],
+            "meilleur_modele": result["meilleur_modele"],
+            "tous_les_resultats": result["tous_les_resultats"]
+        })
+    else:
+       
+        precision = evaluate_forcing_algorithms(type_affichage, data)
+        return Response({ "precision": precision })

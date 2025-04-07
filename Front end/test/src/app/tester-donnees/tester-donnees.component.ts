@@ -20,6 +20,9 @@ export class TesterDonneesComponent implements AfterViewInit {
   isLoading = false;
   showPrecision = false;
   precision = 91.5;
+  meilleurModele: string | null = null;
+  allPrecisions: { [key: string]: number } | null = null;
+
 
   typeAffichage: 'mois' | 'trimestre' | 'annee' = 'mois';
 
@@ -46,22 +49,34 @@ export class TesterDonneesComponent implements AfterViewInit {
   testerModel() {
     this.isLoading = true;
     this.showPrecision = false;
+    this.meilleurModele = null;
+    this.allPrecisions = null;
 
     const payload = {
       model: this.selectedModel,
-      type: this.typeAffichage, // 'mois' | 'trimestre' | 'annee'
-      data: this.salesData // liste filtrée sans revenue null
+      type: this.typeAffichage,
+      data: this.salesData
     };
 
     this.http.post<any>('http://localhost:8000/api/tester-modele/', payload).subscribe(response => {
       this.precision = response.precision;
       this.showPrecision = true;
       this.isLoading = false;
+
+      // Cas "best_fit" → récupérer le meilleur modèle et les précisions complètes
+      if (this.selectedModel === "best_fit") {
+        this.meilleurModele = response.meilleur_modele;
+        this.allPrecisions = response.tous_les_resultats;
+      } else {
+        this.meilleurModele = this.selectedModel;
+      }
     }, error => {
       console.error("❌ Erreur lors du test :", error);
       this.isLoading = false;
     });
   }
+
+
 
 
   loadData(type: 'mois' | 'trimestre' | 'annee') {

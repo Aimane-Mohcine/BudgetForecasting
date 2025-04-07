@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 # ==== Paramètres ====
 date_debut = "2020-01"
-annee=4
+annee=6
 nb_mois_valide = annee*12
 nb_mois_null = 12
 

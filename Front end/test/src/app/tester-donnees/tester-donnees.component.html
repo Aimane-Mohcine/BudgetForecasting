@@ -14,6 +14,8 @@
             <option value="arima">ARIMA</option>
             <option value="sarima">SARIMA</option>
             <option value="prophet">Prophet</option>
+            <option value="holt-Winters">Holt-Winters</option>
+            <option value="best_fit">Best fit </option>
           </select>
         </div>
       </div>
@@ -34,15 +36,43 @@
       </div>
 
       <!-- ✅ Précision ici -->
-      <div *ngIf="showPrecision" class="text-center mt-3">
-        <span class="badge bg-success px-3 py-2 fs-6">
-          ✅ Précision : {{ precision }}%
-        </span>
-      </div>
-    </div>
-  </div>
 
-  <!-- 🔹 Boutons d'affichage -->
+      <!-- ✅ Résultat best fit -->
+      <div *ngIf="meilleurModele && allPrecisions && showPrecision" class="text-center mt-3">
+        <h5 class="text-success fw-bold mb-2">
+          ✅ Meilleur algorithme : {{ meilleurModele }}
+        </h5>
+        <p class="fs-6 text-dark mb-3">
+          🔍 Précision : <strong>{{ precision }}%</strong>
+        </p>
+
+        <div class="text-start mx-auto" style="max-width: 400px;">
+          <h6 class="text-secondary fw-bold">📊 Résultats de tous les algorithmes :</h6>
+          <ul class="list-group">
+            <li
+              *ngFor="let item of allPrecisions | keyvalue"
+              class="list-group-item d-flex justify-content-between align-items-center"
+              [ngClass]="{'list-group-item-success': item.key === meilleurModele}">
+              <span>{{ item.key }}</span>
+              <span><strong>{{ item.value }}%</strong></span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ✅ Résultat modèle normal -->
+      <div *ngIf="!allPrecisions && showPrecision" class="text-center mt-3">
+  <span class="badge bg-success px-3 py-2 fs-6">
+    ✅ Précision : {{ precision }}%
+  </span>
+      </div>
+
+
+
+
+
+
+      <!-- 🔹 Boutons d'affichage -->
   <div class="card shadow-sm border-0 mb-3">
     <div class="card-body py-3 text-center">
       <div class="mb-2 text-secondary fw-semibold">Afficher les revenus par :</div>
@@ -95,5 +125,7 @@
         </div>
       </div>
     </div>
+  </div>
+</div>
   </div>
 </div>
