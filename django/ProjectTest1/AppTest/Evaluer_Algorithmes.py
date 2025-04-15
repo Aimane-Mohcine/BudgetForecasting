@@ -2,53 +2,42 @@ from sklearn.linear_model import LinearRegression
 
 import numpy as np
 
-import random
-import time  
-from sklearn.metrics import mean_absolute_error
+
 from pmdarima import auto_arima
 from prophet import Prophet
 from sklearn.metrics import mean_absolute_percentage_error
 import pandas as pd
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 import warnings
-
-def tester_regression_lineaire() -> float:
-      # Génère une précision aléatoire entre 85.00 et 95.00
-    precision = round(random.uniform(85, 95), 2)
-    print("✅ Précision simulée :", precision, "%")
-     # 💤 Pause simulée (ex: 1.5 secondes)
-    time.sleep(3)
-    return precision
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 
 def evaluate_regression_lineaire(type_affichage, data, nb_periodes_test=1):
 
     print("▶️ Évaluation modèle - Régression Linéaire")
     print("📆 Type affichage :", type_affichage)
-    m=12
-    t=4
-    a=1
-    # Définir combien de lignes selon le type_affichage
+    m = 12
+    t = 4
+    a = 1
+
     type_to_multiplier = {
-        "mois": m*1,
-        "trimestre": t*1,
-        "annee": a*2
+        "mois": m * 1,
+        "trimestre": t * 1,
+        "annee": a * 2
     }
-    
+
     if type_affichage not in type_to_multiplier:
         raise ValueError("Type d'affichage non reconnu. Utilisez 'mois', 'trimestre' ou 'annee'.")
-    
+
     horizon_test = nb_periodes_test * type_to_multiplier[type_affichage]
     print(f"🧮 Nombre de lignes test à prévoir : {horizon_test}")
 
-    # Trier les dates et indexer
     unique_dates = sorted(set(entry["date"] for entry in data))
     date_to_index = {date: i for i, date in enumerate(unique_dates)}
     
     for entry in data:
         entry["index"] = date_to_index[entry["date"]]
 
-    # Trier le dataset
     dataset_sorted = sorted(data, key=lambda x: x["index"])
     complete_entries = [e for e in dataset_sorted if e["revenue"] is not None]
 
@@ -58,6 +47,7 @@ def evaluate_regression_lineaire(type_affichage, data, nb_periodes_test=1):
 
     train_set = complete_entries[:-horizon_test]
     test_set = complete_entries[-horizon_test:]
+
     print("------------------------------------")
     print("traing sets :")
     for item in train_set:
@@ -67,6 +57,7 @@ def evaluate_regression_lineaire(type_affichage, data, nb_periodes_test=1):
     for item in test_set:
         print(f"  ➤ {item['date']} : {item['revenue']} €")
     print("------------------------------------")
+
     X_train = np.array([e["index"] for e in train_set]).reshape(-1, 1)
     y_train = np.array([e["revenue"] for e in train_set])
     
@@ -77,12 +68,37 @@ def evaluate_regression_lineaire(type_affichage, data, nb_periodes_test=1):
     y_test = np.array([e["revenue"] for e in test_set])
     y_pred = model.predict(X_test)
 
-    mae = mean_absolute_error(y_test, y_pred)
-    precision = 1 - mae / (np.mean(y_test) + 1e-8)
-    precision = round(precision * 100, 2)
+    print("------------------------------------")
+    print("previon sets :")
+    for i, prediction in enumerate(y_pred):
+        print(f"Ligne {i+1} : {prediction:.2f}")
+    print("------------------------------------")
 
-    print("✅ Précision :", precision, "%")
-    return precision
+    mape = mean_absolute_percentage_error(y_test, y_pred)
+
+    precision = round((1 - mape) * 100, 2)
+    #-----------------------------------
+    
+    # Calcul MAE
+    mae = mean_absolute_error(y_test, y_pred)
+    mae_pct = 1 - mae / (np.mean(y_test))
+    mae_pct = round(mae_pct * 100, 2)
+
+    # Calcul RMSE
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    rmse_pct = 1 - rmse / (np.mean(y_test))
+    rmse_pct = round(rmse_pct * 100, 2)
+
+    # Score combiné en pourcentage (pondération 50% MAE% + 50% RMSE%)
+    score_final_pct = round((mae_pct * 0.5 + rmse_pct * 0.5), 2)
+
+    # Affichage
+    print("-------------------------------------------------------------")
+    print("MAE (en précision %)  : ", mae_pct, "%")
+    print("MAPE (déjà calculé)   : ", precision, "%")
+    print("RMSE (en précision %) : ", rmse_pct, "%")
+    print("✅ Score final (%)     : ", score_final_pct, "% (MAE% x 0.5 + RMSE% x 0.5)")
+    return precision 
 
 
 
@@ -144,11 +160,35 @@ def evaluate_arima(type_affichage, data, nb_periodes_test=1):
 
     y_pred = model.predict(n_periods=horizon_test)
 
+    print("------------------------------------")
+    print("previon sets :")
+    for i, prediction in enumerate(y_pred):
+        print(f"Ligne {i+1} : {prediction:.2f}")
+    print("------------------------------------")
     # 🎯 MAPE & précision
     mape_val = mean_absolute_percentage_error(y_test, y_pred) * 100
     precision = round(100 - mape_val, 2)
+    
+    # Calcul MAE
+    mae = mean_absolute_error(y_test, y_pred)
+    mae_pct = 1 - mae / (np.mean(y_test))
+    mae_pct = round(mae_pct * 100, 2)
 
-    print(f"✅ Précision ARIMA : {precision:.2f}% (MAPE = {mape_val:.2f}%)")
+    # Calcul RMSE
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    rmse_pct = 1 - rmse / (np.mean(y_test))
+    rmse_pct = round(rmse_pct * 100, 2)
+
+    # Score combiné en pourcentage (pondération 50% MAE% + 50% RMSE%)
+    score_final_pct = round((mae_pct * 0.5 + rmse_pct * 0.5), 2)
+
+    # Affichage
+    print("-------------------------------------------------------------")
+    print("MAE (en précision %)  : ", mae_pct, "%")
+    print("MAPE (déjà calculé)   : ", precision, "%")
+    print("RMSE (en précision %) : ", rmse_pct, "%")
+    print("✅ Score final (%)     : ", score_final_pct, "% (MAE% x 0.5 + RMSE% x 0.5)")
+        
     return precision
 
 
@@ -221,12 +261,37 @@ def evaluate_sarima(type_affichage, data, nb_periodes_test=1):
 
     y_pred = model.predict(n_periods=horizon_test)
 
+    print("------------------------------------")
+    print("previon sets :")
+    for i, prediction in enumerate(y_pred):
+        print(f"Ligne {i+1} : {prediction:.2f}")
+    print("------------------------------------")
     # 🎯 Évaluation
     mape_val = mean_absolute_percentage_error(y_test, y_pred) * 100
     precision = round(100 - mape_val, 2)
 
-    print(f"✅ Précision SARIMA : {precision:.2f}% (MAPE = {mape_val:.2f}%)")
-    return precision
+        
+    # Calcul MAE
+    mae = mean_absolute_error(y_test, y_pred)
+    mae_pct = 1 - mae / (np.mean(y_test))
+    mae_pct = round(mae_pct * 100, 2)
+
+    # Calcul RMSE
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    rmse_pct = 1 - rmse / (np.mean(y_test))
+    rmse_pct = round(rmse_pct * 100, 2)
+
+    # Score combiné en pourcentage (pondération 50% MAE% + 50% RMSE%)
+    score_final_pct = round((mae_pct * 0.5 + rmse_pct * 0.5), 2)
+
+    # Affichage
+    print("-------------------------------------------------------------")
+    print("MAE (en précision %)  : ", mae_pct, "%")
+    print("MAPE (déjà calculé)   : ", precision, "%")
+    print("RMSE (en précision %) : ", rmse_pct, "%")
+    print("✅ Score final (%)     : ", score_final_pct, "% (MAE% x 0.5 + RMSE% x 0.5)")
+    return precision 
+
 
 
 
@@ -305,8 +370,32 @@ def evaluate_prophet(type_affichage, data, nb_periodes_test=1):
     mape_val = mean_absolute_percentage_error(y_true, y_pred) * 100
     precision = round(100 - mape_val, 2)
 
-    print(f"✅ Précision Prophet : {precision:.2f}% (MAPE = {mape_val:.2f}%)")
-    return precision
+    print("------------------------------------")
+    print("previon sets :")
+    for i, prediction in enumerate(y_pred):
+        print(f"Ligne {i+1} : {prediction:.2f}")
+    print("------------------------------------")
+#-----------------------------------
+    # Calcul MAE
+    mae = mean_absolute_error(y_true, y_pred)
+    mae_pct = 1 - mae / (np.mean(y_true))
+    mae_pct = round(mae_pct * 100, 2)
+
+    # Calcul RMSE
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    rmse_pct = 1 - rmse / (np.mean(y_true))
+    rmse_pct = round(rmse_pct * 100, 2)
+
+    # Score combiné en pourcentage (pondération 50% MAE% + 50% RMSE%)
+    score_final_pct = round((mae_pct * 0.5 + rmse_pct * 0.5), 2)
+
+    # Affichage
+    print("-------------------------------------------------------------")
+    print("MAE (en précision %)  : ", mae_pct, "%")
+    print("MAPE (déjà calculé)   : ", precision, "%")
+    print("RMSE (en précision %) : ", rmse_pct, "%")
+    print("✅ Score final (%)     : ", score_final_pct, "% (MAE% x 0.5 + RMSE% x 0.5)")
+    return precision 
 
 
 
@@ -406,6 +495,33 @@ def evaluate_holt_winters(type_affichage, data, nb_periodes_test=1):
 
         print(f"✅ Meilleur modèle : {best_config} (AIC = {best_aic:.2f})")
         print(f"✅ Précision Holt-Winters : {precision:.2f}% (MAPE = {mape_val:.2f}%)")
+            #-----------------------------------
+        print("------------------------------------")
+        print("previon sets :")
+        for i, prediction in enumerate(y_pred):
+            print(f"Ligne {i+1} : {prediction:.2f}")
+        print("------------------------------------")
+            # Calcul MAE
+        mae = mean_absolute_error(y_test, y_pred)
+        mae_pct = 1 - mae / (np.mean(y_test))
+        mae_pct = round(mae_pct * 100, 2)
+
+        # Calcul RMSE
+        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+        rmse_pct = 1 - rmse / (np.mean(y_test))
+        rmse_pct = round(rmse_pct * 100, 2)
+
+        # Score combiné en pourcentage (pondération 50% MAE% + 50% RMSE%)
+        score_final_pct = round((mae_pct * 0.5 + rmse_pct * 0.5), 2)
+
+        # Affichage
+        print("-------------------------------------------------------------")
+        print("MAE (en précision %)  : ", mae_pct, "%")
+        print("MAPE (déjà calculé)   : ", precision, "%")
+        print("RMSE (en précision %) : ", rmse_pct, "%")
+        print("✅ Score final (%)     : ", score_final_pct, "% (MAE% x 0.5 + RMSE% x 0.5)")
+        
+
         return precision
     else:
         print("❌ Aucun modèle Holt-Winters valide trouvé.")
