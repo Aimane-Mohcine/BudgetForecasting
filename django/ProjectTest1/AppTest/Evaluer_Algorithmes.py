@@ -12,6 +12,11 @@ import warnings
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 
+
+def smape(y_true, y_pred):
+    y_true, y_pred = np.array(y_true), np.array(y_pred)
+    return 100 * np.mean(2 * np.abs(y_pred - y_true) / (np.abs(y_true) + np.abs(y_pred)))
+
 def evaluate_regression_lineaire(type_affichage, data, nb_periodes_test=1):
 
     print("▶️ Évaluation modèle - Régression Linéaire")
@@ -89,16 +94,27 @@ def evaluate_regression_lineaire(type_affichage, data, nb_periodes_test=1):
     rmse_pct = 1 - rmse / (np.mean(y_test))
     rmse_pct = round(rmse_pct * 100, 2)
 
-    # Score combiné en pourcentage (pondération 50% MAE% + 50% RMSE%)
+
+
+    # --- Score combiné final (ex. pondération 50% MAE% + 50% RMSE%) ---
     score_final_pct = round((mae_pct * 0.5 + rmse_pct * 0.5), 2)
 
-    # Affichage
+     # --- Calcul sMAPE ---
+    smape_precision = round(100 - smape(np.array(y_test), np.array(y_pred)), 2)
+
+    # ✅ --- Nouveau Score combiné RMSE% + sMAPE% (ex: 70% RMSE + 30% sMAPE) ---
+    score_smape_rmse = round(0.7 * rmse_pct + 0.3 * smape_precision, 2)
+
+
+    # --- Affichage ---
     print("-------------------------------------------------------------")
-    print("MAE (en précision %)  : ", mae_pct, "%")
-    print("MAPE (déjà calculé)   : ", precision, "%")
-    print("RMSE (en précision %) : ", rmse_pct, "%")
-    print("✅ Score final (%)     : ", score_final_pct, "% (MAE% x 0.5 + RMSE% x 0.5)")
-    return precision 
+    print("MAE (en précision %)    : ", mae_pct, "%")
+    print("MAPE (déjà calculé)     : ", precision, "%")
+    print("sMAPE (en précision %)  : ", smape_precision, "%")
+    print("RMSE (en précision %)   : ", rmse_pct, "%")
+    print("✅ Score MAE+RMSE        : ", score_final_pct, "% (MAE% x 0.5 + RMSE% x 0.5)")
+    print("⭐ Score RMSE+sMAPE      : ", score_smape_rmse, "% (RMSE% x 0.7 + sMAPE% x 0.3)")
+    return score_smape_rmse 
 
 
 
@@ -182,15 +198,22 @@ def evaluate_arima(type_affichage, data, nb_periodes_test=1):
     # Score combiné en pourcentage (pondération 50% MAE% + 50% RMSE%)
     score_final_pct = round((mae_pct * 0.5 + rmse_pct * 0.5), 2)
 
-    # Affichage
-    print("-------------------------------------------------------------")
-    print("MAE (en précision %)  : ", mae_pct, "%")
-    print("MAPE (déjà calculé)   : ", precision, "%")
-    print("RMSE (en précision %) : ", rmse_pct, "%")
-    print("✅ Score final (%)     : ", score_final_pct, "% (MAE% x 0.5 + RMSE% x 0.5)")
-        
-    return precision
+     # --- Calcul sMAPE ---
+    smape_precision = round(100 - smape(np.array(y_test), np.array(y_pred)), 2)
 
+    # ✅ --- Nouveau Score combiné RMSE% + sMAPE% (ex: 70% RMSE + 30% sMAPE) ---
+    score_smape_rmse = round(0.7 * rmse_pct + 0.3 * smape_precision, 2)
+
+
+    # --- Affichage ---
+    print("-------------------------------------------------------------")
+    print("MAE (en précision %)    : ", mae_pct, "%")
+    print("MAPE (déjà calculé)     : ", precision, "%")
+    print("sMAPE (en précision %)  : ", smape_precision, "%")
+    print("RMSE (en précision %)   : ", rmse_pct, "%")
+    print("✅ Score MAE+RMSE        : ", score_final_pct, "% (MAE% x 0.5 + RMSE% x 0.5)")
+    print("⭐ Score RMSE+sMAPE      : ", score_smape_rmse, "% (RMSE% x 0.7 + sMAPE% x 0.3)")
+    return score_smape_rmse 
 
 
 
@@ -284,14 +307,24 @@ def evaluate_sarima(type_affichage, data, nb_periodes_test=1):
     # Score combiné en pourcentage (pondération 50% MAE% + 50% RMSE%)
     score_final_pct = round((mae_pct * 0.5 + rmse_pct * 0.5), 2)
 
-    # Affichage
-    print("-------------------------------------------------------------")
-    print("MAE (en précision %)  : ", mae_pct, "%")
-    print("MAPE (déjà calculé)   : ", precision, "%")
-    print("RMSE (en précision %) : ", rmse_pct, "%")
-    print("✅ Score final (%)     : ", score_final_pct, "% (MAE% x 0.5 + RMSE% x 0.5)")
-    return precision 
 
+     # --- Calcul sMAPE ---
+    smape_precision = round(100 - smape(np.array(y_test), np.array(y_pred)), 2)
+
+
+    # ✅ --- Nouveau Score combiné RMSE% + sMAPE% (ex: 70% RMSE + 30% sMAPE) ---
+    score_smape_rmse = round(0.7 * rmse_pct + 0.3 * smape_precision, 2)
+
+
+    # --- Affichage ---
+    print("-------------------------------------------------------------")
+    print("MAE (en précision %)    : ", mae_pct, "%")
+    print("MAPE (déjà calculé)     : ", precision, "%")
+    print("sMAPE (en précision %)  : ", smape_precision, "%")
+    print("RMSE (en précision %)   : ", rmse_pct, "%")
+    print("✅ Score MAE+RMSE        : ", score_final_pct, "% (MAE% x 0.5 + RMSE% x 0.5)")
+    print("⭐ Score RMSE+sMAPE      : ", score_smape_rmse, "% (RMSE% x 0.7 + sMAPE% x 0.3)")
+    return score_smape_rmse 
 
 
 
@@ -389,15 +422,22 @@ def evaluate_prophet(type_affichage, data, nb_periodes_test=1):
     # Score combiné en pourcentage (pondération 50% MAE% + 50% RMSE%)
     score_final_pct = round((mae_pct * 0.5 + rmse_pct * 0.5), 2)
 
-    # Affichage
+     # --- Calcul sMAPE ---
+    smape_precision = round(100 - smape(np.array(y_true), np.array(y_pred)), 2)
+
+    # ✅ --- Nouveau Score combiné RMSE% + sMAPE% (ex: 70% RMSE + 30% sMAPE) ---
+    score_smape_rmse = round(0.7 * rmse_pct + 0.3 * smape_precision, 2)
+
+
+    # --- Affichage ---
     print("-------------------------------------------------------------")
-    print("MAE (en précision %)  : ", mae_pct, "%")
-    print("MAPE (déjà calculé)   : ", precision, "%")
-    print("RMSE (en précision %) : ", rmse_pct, "%")
-    print("✅ Score final (%)     : ", score_final_pct, "% (MAE% x 0.5 + RMSE% x 0.5)")
-    return precision 
-
-
+    print("MAE (en précision %)    : ", mae_pct, "%")
+    print("MAPE (déjà calculé)     : ", precision, "%")
+    print("sMAPE (en précision %)  : ", smape_precision, "%")
+    print("RMSE (en précision %)   : ", rmse_pct, "%")
+    print("✅ Score MAE+RMSE        : ", score_final_pct, "% (MAE% x 0.5 + RMSE% x 0.5)")
+    print("⭐ Score RMSE+sMAPE      : ", score_smape_rmse, "% (RMSE% x 0.7 + sMAPE% x 0.3)")
+    return score_smape_rmse 
 
 
 def evaluate_holt_winters(type_affichage, data, nb_periodes_test=1):
@@ -514,15 +554,24 @@ def evaluate_holt_winters(type_affichage, data, nb_periodes_test=1):
         # Score combiné en pourcentage (pondération 50% MAE% + 50% RMSE%)
         score_final_pct = round((mae_pct * 0.5 + rmse_pct * 0.5), 2)
 
-        # Affichage
-        print("-------------------------------------------------------------")
-        print("MAE (en précision %)  : ", mae_pct, "%")
-        print("MAPE (déjà calculé)   : ", precision, "%")
-        print("RMSE (en précision %) : ", rmse_pct, "%")
-        print("✅ Score final (%)     : ", score_final_pct, "% (MAE% x 0.5 + RMSE% x 0.5)")
-        
 
-        return precision
+        # --- Calcul sMAPE ---
+        smape_precision = round(100 - smape(np.array(y_test), np.array(y_pred)), 2)
+
+
+        # ✅ --- Nouveau Score combiné RMSE% + sMAPE% (ex: 70% RMSE + 30% sMAPE) ---
+        score_smape_rmse = round(0.7 * rmse_pct + 0.3 * smape_precision, 2)
+
+
+        # --- Affichage ---
+        print("-------------------------------------------------------------")
+        print("MAE (en précision %)    : ", mae_pct, "%")
+        print("MAPE (déjà calculé)     : ", precision, "%")
+        print("sMAPE (en précision %)  : ", smape_precision, "%")
+        print("RMSE (en précision %)   : ", rmse_pct, "%")
+        print("✅ Score MAE+RMSE        : ", score_final_pct, "% (MAE% x 0.5 + RMSE% x 0.5)")
+        print("⭐ Score RMSE+sMAPE      : ", score_smape_rmse, "% (RMSE% x 0.7 + sMAPE% x 0.3)")
+        return score_smape_rmse 
     else:
         print("❌ Aucun modèle Holt-Winters valide trouvé.")
         return 0
